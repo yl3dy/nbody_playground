@@ -17,7 +17,7 @@ Below CSV means CSV with whitespace delimiter.
 Global config file (one-entry CSV):
 
 ```
-dt iternum output_point_num engine method
+dt iter_num output_point_num engine method
 {one line with global parameters}
 ```
 
