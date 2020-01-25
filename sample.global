@@ -1,2 +1,2 @@
 dt iter_num output_point_num engine method
-0.1 1000 100 simple_python euler
+0.1 1000 100 dummy dummy_method
