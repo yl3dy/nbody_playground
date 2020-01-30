@@ -14,7 +14,7 @@ def read_global_config(run_name : str) -> GlobalConfig:
     """Return global config."""
     p = Path(run_name + '.global')
     with open(p, newline='') as f:
-        reader = csv.DictReader(f, delimiter=' ')
+        reader = csv.DictReader(f, delimiter=' ', skipinitialspace=True)
         cfg_dict = next(reader)
         cfg = GlobalConfig(
             dt=float(cfg_dict['dt']),
@@ -42,7 +42,7 @@ def read_body_config(run_name : str, iter_num : int = 0) -> SystemState:
 
     bodies = []
     with open(config_path, newline='') as f:
-        reader = csv.DictReader(f, delimiter=' ')
+        reader = csv.DictReader(f, delimiter=' ', skipinitialspace=True)
         for row in reader:
             bodies.append(SingleBodyConfig(
                 name=row['name'],
