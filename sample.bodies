@@ -1,3 +1,3 @@
-name m x y z vx vy vz
-body_a 1 0.1 0.2 0.3 0.1 0.2 0.3
-body_b 10 1 2 3 1 2 3
+name      m      x        y    z    vx   vy         vz
+Sun    1.99e30  0.0      0.0  0.0  0.0  -8.955e-2  0.0
+Earth  5.98e24  1.50e11  0.0  0.0  0.0  2.98e4     0.0

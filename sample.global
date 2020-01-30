@@ -1,2 +1,2 @@
-dt iter_num output_point_num engine method
-0.1 1000 100 dummy dummy_method
+dt   iter_num  output_point_num  engine      method
+7200   8700        100           naive  semi_explicit_euler

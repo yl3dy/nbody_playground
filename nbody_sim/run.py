@@ -1,6 +1,5 @@
 import logging
 from . import common
-from .engines import ENGINES
 
 module_logger = logging.getLogger(__name__)
 
@@ -15,6 +14,8 @@ def parse_and_run(run_name : str) -> None:
 
     if global_config.engine == 'dummy':
         from .engines.dummy import simulate
+    elif global_config.engine == 'naive':
+        from .engines.naive import simulate
     else:
         raise ValueError('unknown engine name {}'.format(global_config.engine))
 
