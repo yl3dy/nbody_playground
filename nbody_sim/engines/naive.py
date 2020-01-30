@@ -82,9 +82,70 @@ class SemiExplicitEulerIntegrator(BaseIntegrator):
         self._current_v = self._previous_v[0] + self.dt*self._grav_accel(self._previous_r[0])
         self._current_r = self._previous_r[0] + self.dt*self._current_v
 
+class ExplicitRK2Integrator(BaseIntegrator):
+    NUM_PREVIOUS_STATES = 1
+    def _main_method(self):
+        dt, a = self.dt, self._grav_accel
+        prev_r, prev_v = self._previous_r[0], self._previous_v[0]
+
+        k1_r = prev_v*dt
+        k1_v = a(prev_r)*dt
+        k2_r = (prev_v + 0.5*k1_v)*dt
+        k2_v = a(prev_r + 0.5*k1_r)*dt
+        self._current_r = prev_r + k2_r
+        self._current_v = prev_v + k2_v
+
+class RalstonIntegrator(BaseIntegrator):
+    NUM_PREVIOUS_STATES = 1
+    def _main_method(self):
+        dt, a = self.dt, self._grav_accel
+        prev_r, prev_v = self._previous_r[0], self._previous_v[0]
+
+        k1_r = prev_v*dt
+        k1_v = a(prev_r)*dt
+        k2_r = (prev_v + (2/3)*k1_v)*dt
+        k2_v = a(prev_r + (2/3)*k1_r)*dt
+        self._current_r = prev_r + 0.25*k1_r + 0.75*k2_r
+        self._current_v = prev_v + 0.25*k1_v + 0.75*k2_v
+
+class ExplicitRK4Integrator(BaseIntegrator):
+    NUM_PREVIOUS_STATES = 1
+    def _main_method(self):
+        dt, a = self.dt, self._grav_accel
+        prev_r, prev_v = self._previous_r[0], self._previous_v[0]
+
+        k1_r = prev_v*dt
+        k1_v = a(prev_r)*dt
+        k2_r = (prev_v + 0.5*k1_v)*dt
+        k2_v = a(prev_r + 0.5*k1_r)*dt
+        k3_r = (prev_v + 0.5*k2_v)*dt
+        k3_v = a(prev_r + 0.5*k2_r)*dt
+        k4_r = (prev_v + k3_v)*dt
+        k4_v = a(prev_r + k3_r)*dt
+        self._current_r = prev_r + (k1_r + 2*k2_r + 2*k3_r + k4_r) / 6
+        self._current_v = prev_v + (k1_v + 2*k2_v + 2*k3_v + k4_v) / 6
+
+class VelocityVerletIntegrator(BaseIntegrator):
+    NUM_PREVIOUS_STATES = 1
+    def _main_method(self):
+        dt, a = self.dt, self._grav_accel
+        prev_r, prev_v = self._previous_r[0], self._previous_v[0]
+
+        if not hasattr(self, '_a_prev'):
+            self._a_prev = a(prev_r)
+
+        self._current_r = prev_r + prev_v*dt + 0.5*self._a_prev*dt**2
+        a_new = a(self._current_r)
+        self._current_v = prev_v + 0.5*(self._a_prev + a_new)*dt
+        self._a_prev = a_new
+
 
 INTEGRATOR_LIST = {
-    'semi_explicit_euler': SemiExplicitEulerIntegrator
+    'semi_explicit_euler': SemiExplicitEulerIntegrator,
+    'explicit_rk2': ExplicitRK2Integrator,
+    'ralston': RalstonIntegrator,
+    'explicit_rk4': ExplicitRK4Integrator,
+    'velocity_verlet': VelocityVerletIntegrator,
 }
 METHODS = list(INTEGRATOR_LIST.keys())
 
