@@ -80,11 +80,12 @@ def write_body_config(run_name : str, state : SystemState, iter_num : int) -> No
 
 def get_iter_indices(iter_num : int, output_num : int):
     """Generator to get iteration index and write flag."""
-    assert iter_num > output_num
+    assert iter_num >= output_num
     assert iter_num % output_num == 0
 
+    step = iter_num // output_num
     for iter_idx in range(1, iter_num+1):
-        do_write = (iter_idx % output_num) == 0
+        do_write = (iter_idx % step) == 0
         yield do_write, iter_idx
 
 
