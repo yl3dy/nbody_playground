@@ -36,15 +36,22 @@ def load_simulation_data(run_name : str):
     return body_info_tables
 
 
+def _get_times_from_body_infos(body_infos):
+    return next(iter(body_infos.values()))['t']
+
+
 def plot_positions(run_name : str, save_path : Optional[Path], body_list : Optional[List[str]]) -> None:
     body_infos = load_simulation_data(run_name)
 
     if not body_list:
         body_list = body_infos.keys()
 
+    times = _get_times_from_body_infos(body_infos)
     for body_name in body_list:
         body_info = body_infos[body_name]
-        plt.plot(body_info['x'], body_info['y'], label=body_name)
+        plt.scatter(body_info['x'], body_info['y'], c=times, label=body_name, s=2, alpha=0.5, cmap='inferno')
+    plt.axvline(0, linestyle='--', color='gray', alpha=0.5)
+    plt.axhline(0, linestyle='--', color='gray', alpha=0.5)
     plt.xlabel('x, m')
     plt.ylabel('y, m')
     plt.legend()
@@ -67,7 +74,7 @@ def plot_energy(run_name : str, save_path : Optional[Path], body_list : Optional
     body_energies = {name: get_body_energies(body_infos[name]) for name in body_list}
 
     if is_cumulative:
-        body_times = next(iter(body_infos.values()))['t']
+        body_times = _get_times_from_body_infos(body_infos)
         cumulative_energy = sum(body_energies.values())
         plt.plot(body_times, cumulative_energy, label='Cumulative')
     else:
