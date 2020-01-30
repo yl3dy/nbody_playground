@@ -55,7 +55,7 @@ def read_body_config(run_name : str, iter_num : int = 0) -> SystemState:
         names=[b.name for b in bodies],
         m=np.array([b.m for b in bodies], dtype=np.float64),
         r=np.array([b.r for b in bodies], dtype=np.float64),
-        v=np.array([b.r for b in bodies], dtype=np.float64)
+        v=np.array([b.v for b in bodies], dtype=np.float64)
     )
     return system_state
 
