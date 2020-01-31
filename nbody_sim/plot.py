@@ -3,7 +3,9 @@ import logging
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas
+from scipy.constants import G
+import scipy.linalg
+from numpy.lib.recfunctions import structured_to_unstructured
 
 from . import common
 
@@ -61,14 +63,26 @@ def plot_positions(run_name : str, save_path : Optional[Path], body_list : Optio
         plt.show()
 
 
-def get_body_energies(body_info):
-    return 0.5 * body_info['m'] * (body_info['vx']**2 + body_info['vy']**2 + body_info['vz']**2)
+def get_body_energies(body_infos, body_name):
+    bi = body_infos[body_name]
+    K = 0.5 * bi['m'] * (bi['vx']**2 + bi['vy']**2 + bi['vz']**2)
 
+    W = 0
+    r_mine = structured_to_unstructured(bi[['x', 'y', 'z']])
+    for other_body_name in body_infos.keys():
+        if other_body_name == body_name:
+            continue
+        body_other = body_infos[other_body_name]
+        r_other = structured_to_unstructured(body_other[['x', 'y', 'z']])
+        W += body_other['m'] / scipy.linalg.norm(r_other - r_mine, axis=1)
+    W *= -G*bi['m']*W
+
+    return K + W
 
 def _get_energy_stats(energies):
     return {
-        'max_diff': np.abs(energies - energies[0]).max() / energies[0],
-        'rel_stdev': energies.std() / energies[0],
+        'max_diff': np.abs(energies - energies[0]).max() / abs(energies[0]),
+        'rel_stdev': energies.std() / abs(energies[0]),
         'avg': energies.mean()
     }
 
@@ -79,7 +93,7 @@ def plot_energy(run_name : str, save_path : Optional[Path], body_list : Optional
     if not body_list:
         body_list = body_infos.keys()
 
-    body_energies = {name: get_body_energies(body_infos[name]) for name in body_list}
+    body_energies = {name: get_body_energies(body_infos, name) for name in body_list}
 
     if is_cumulative:
         body_times = _get_times_from_body_infos(body_infos)
