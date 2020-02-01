@@ -165,6 +165,31 @@ class AdamsBashforth5Integrator(BaseIntegrator):
         self._current_v = prev_v[0] + dt*(1901/720*a(prev_r[0]) - 2774/720*a(prev_r[1]) + 2616/720*a(prev_r[2]) - 1274/720*a(prev_r[3]) + 251/720*a(prev_r[4]))
         self._current_r = prev_r[0] + dt*(1901/720*prev_v[0] - 2774/720*prev_v[1] + 2616/720*prev_v[2] - 1274/720*prev_v[3] + 251/720*prev_v[4])
 
+class BaseRuthIntegrator(BaseIntegrator):
+    NUM_PREVIOUS_STATES = 1
+    C_COEFFS = None
+    D_COEFFS = None
+    def _main_method(self):
+        dt, a = self.dt, self._grav_accel
+        prev_r, prev_v = self._previous_r[0], self._previous_v[0]
+
+        if self.C_COEFFS is None or self.D_COEFFS is None:
+            raise NotImplementedError
+
+        self._current_r = prev_r.copy()
+        self._current_v = prev_v.copy()
+        for c, d in zip(self.C_COEFFS, self.D_COEFFS):
+            self._current_v += d*a(self._current_r)*dt
+            self._current_r += c*self._current_v*dt
+
+class Ruth3Integrator(BaseRuthIntegrator):
+    C_COEFFS = [2/3, -2/3, 1]
+    D_COEFFS = [7/24, 3/4, -1/24]
+
+class Ruth4Integrator(BaseRuthIntegrator):
+    C_COEFFS = [1 / (2*(2 - 2**(1/3))), (1 - 2**(1/3)) / (2*(2 - 2**(1/3))), (1 - 2**(1/3)) / (2*(2 - 2**(1/3))), 1 / (2*(2 - 2**(1/3)))]
+    D_COEFFS = [0, 1/(2 - 2**(1/3)), -2**(1/3) / (2 - 2**(1/3)), 1/(2 - 2**(1/3))]
+
 
 INTEGRATOR_LIST = {
     'semi_explicit_euler': SemiExplicitEulerIntegrator,
@@ -174,6 +199,8 @@ INTEGRATOR_LIST = {
     'velocity_verlet': VelocityVerletIntegrator,
     'adams_bashforth_2': AdamsBashforth2Integrator,
     'adams_bashforth_5': AdamsBashforth5Integrator,
+    'ruth3': Ruth3Integrator,
+    'ruth4': Ruth4Integrator,
 }
 METHODS = list(INTEGRATOR_LIST.keys())
 
