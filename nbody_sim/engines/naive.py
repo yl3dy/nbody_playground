@@ -139,6 +139,32 @@ class VelocityVerletIntegrator(BaseIntegrator):
         self._current_v = prev_v + 0.5*(self._a_prev + a_new)*dt
         self._a_prev = a_new
 
+class AdamsBashforth2Integrator(BaseIntegrator):
+    NUM_PREVIOUS_STATES = 2
+    def _starting_method(self):
+        """Semi-explicit Euler as a starting method."""
+        self._current_v = self._previous_v[0] + self.dt*self._grav_accel(self._previous_r[0])
+        self._current_r = self._previous_r[0] + self.dt*self._current_v
+    def _main_method(self):
+        dt, a = self.dt, self._grav_accel
+        prev_r, prev_v = self._previous_r, self._previous_v
+
+        self._current_v = prev_v[0] + 1.5*dt*a(prev_r[0]) - 0.5*dt*a(prev_r[1])
+        self._current_r = prev_r[0] + 1.5*dt*prev_v[0] - 0.5*dt*prev_v[1]
+
+class AdamsBashforth5Integrator(BaseIntegrator):
+    NUM_PREVIOUS_STATES = 5
+    def _starting_method(self):
+        """Semi-explicit Euler as a starting method."""
+        self._current_v = self._previous_v[0] + self.dt*self._grav_accel(self._previous_r[0])
+        self._current_r = self._previous_r[0] + self.dt*self._current_v
+    def _main_method(self):
+        dt, a = self.dt, self._grav_accel
+        prev_r, prev_v = self._previous_r, self._previous_v
+
+        self._current_v = prev_v[0] + dt*(1901/720*a(prev_r[0]) - 2774/720*a(prev_r[1]) + 2616/720*a(prev_r[2]) - 1274/720*a(prev_r[3]) + 251/720*a(prev_r[4]))
+        self._current_r = prev_r[0] + dt*(1901/720*prev_v[0] - 2774/720*prev_v[1] + 2616/720*prev_v[2] - 1274/720*prev_v[3] + 251/720*prev_v[4])
+
 
 INTEGRATOR_LIST = {
     'semi_explicit_euler': SemiExplicitEulerIntegrator,
@@ -146,6 +172,8 @@ INTEGRATOR_LIST = {
     'ralston': RalstonIntegrator,
     'explicit_rk4': ExplicitRK4Integrator,
     'velocity_verlet': VelocityVerletIntegrator,
+    'adams_bashforth_2': AdamsBashforth2Integrator,
+    'adams_bashforth_5': AdamsBashforth5Integrator,
 }
 METHODS = list(INTEGRATOR_LIST.keys())
 
