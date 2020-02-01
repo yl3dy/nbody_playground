@@ -1,6 +1,7 @@
 import collections
 from abc import ABC, abstractmethod
 import math
+import time
 import numpy as np
 from scipy.constants import G
 import scipy.linalg
@@ -207,6 +208,7 @@ METHODS = list(INTEGRATOR_LIST.keys())
 def simulate(run_name : str, global_config : GlobalConfig, body_config : SystemState) -> None:
     integrator = INTEGRATOR_LIST[global_config.method](global_config, body_config)
 
+    t0 = time.time()
     with common.get_my_progressbar(global_config.iter_num) as bar:
         for do_write, iter_idx in common.get_iter_indices(global_config.iter_num, global_config.output_point_num):
             integrator.advance()
@@ -214,3 +216,4 @@ def simulate(run_name : str, global_config : GlobalConfig, body_config : SystemS
                 common.write_body_config(run_name, integrator.state, iter_idx)
                 bar.update(iter_idx)
         bar.update(global_config.iter_num)
+    print('Integration time: {:.3} s'.format(time.time() - t0))
