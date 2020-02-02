@@ -3,5 +3,6 @@ scipy
 pandas
 matplotlib
 progressbar2
+ruamel.yaml
 pylint
 ipython

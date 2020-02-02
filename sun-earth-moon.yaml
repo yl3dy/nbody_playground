@@ -1,0 +1,22 @@
+global_config:
+    dt: 8640
+    iter_num: 365000
+    output_point_num: 36500
+    engine: naive
+    method: ruth3
+body_config:
+    name: Sun
+    m: 1.9885e30
+    r: [0, 0, 0]
+    v: [0, 0, 0]
+    satellites:
+        - name: Earth
+          m: 5.97237e24
+          r: [1.49598023e11, 0, 0]
+          v: [0, 2.978e4, 0]
+          satellites:
+              - name: Moon
+                m: 7.342e22
+                r: [3.84399e8, 0, 0]
+                v: [0, 1.022e3, 0]
+                satellites:
