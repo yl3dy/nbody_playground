@@ -25,6 +25,16 @@ def read_global_config(run_name : str) -> GlobalConfig:
         )
     return cfg
 
+def write_global_config(run_name : str, global_cfg : GlobalConfig) -> None:
+    """Write a new global config."""
+    fieldnames = ['dt', 'iter_num', 'output_point_num', 'engine', 'method']
+
+    p = Path(run_name + '.global')
+    with open(p, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames, delimiter=' ')
+        writer.writeheader()
+        writer.writerow(global_cfg._asdict())
+
 
 def get_body_config_path(run_name : str, iter_num : int = 0) -> Path:
     assert iter_num >= 0
@@ -61,7 +71,7 @@ def read_body_config(run_name : str, iter_num : int = 0) -> SystemState:
 
 
 def write_body_config(run_name : str, state : SystemState, iter_num : int) -> None:
-    assert iter_num >= 1
+    assert iter_num >= 0
 
     fieldnames = ['name', 'm', 'x', 'y', 'z', 'vx', 'vy', 'vz']
     body_count = len(state.names)
