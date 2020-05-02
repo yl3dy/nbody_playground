@@ -3,13 +3,15 @@ import argparse
 from pathlib import Path
 import collections
 import logging
+
 from ruamel.yaml import YAML
 import numpy as np
 import scipy.linalg
+from scipy.constants import G
+import orbital, orbital.bodies
 
 from nbody_sim import common
 
-import time
 
 def setup_logging(is_debug : bool) -> None:
     loglevel = logging.DEBUG if is_debug else logging.INFO
@@ -17,9 +19,36 @@ def setup_logging(is_debug : bool) -> None:
 
 
 BarycenterData = collections.namedtuple('BarycenterData', ['m', 'r', 'v', 'children'])
+OscBarycenterData = collections.namedtuple('OscBarycenterData', ['m', 'sma', 'ecc', 'inc', 'raan', 'arg_pe', 'M0', 'children'])
+
 
 def to_arr(iterable):
     return np.array(iterable, dtype=np.float64)
+
+
+def osc_to_state_barycenter(osc_barycenter, parent_mass):
+    """Convert oscullating barycenter to a normal (state-vector) one."""
+    if isinstance(osc_barycenter, BarycenterData):
+        return osc_barycenter
+
+    parent_body = orbital.bodies.Body(parent_mass, G*parent_mass, 0, 0, 0)
+    barycenter_orbit = orbital.KeplerianElements(
+        a=osc_barycenter.sma, e=osc_barycenter.ecc, i=osc_barycenter.inc,
+        raan=osc_barycenter.raan, arg_pe=osc_barycenter.arg_pe, M0=osc_barycenter.M0,
+        body=parent_body
+    )
+
+    def orbital_vector_to_arr(vector):
+        return np.array([vector.x, vector.y, vector.z], dtype=np.float64)
+
+    return BarycenterData(
+        m=osc_barycenter.m,
+        r=orbital_vector_to_arr(barycenter_orbit.r),
+        v=orbital_vector_to_arr(barycenter_orbit.v),
+        children=osc_barycenter.children
+    )
+
+
 
 def build_body_list(subpart):
     logger = logging.getLogger(__name__)
@@ -30,17 +59,29 @@ def build_body_list(subpart):
     else:
         if not subpart['satellites']:
             logger.debug(f'Dealing with a single barycenter, no satellites, src: {subpart}')
-            barycenter = BarycenterData(
-                m=float(subpart['m']),
-                r=to_arr(subpart['r']),
-                v=to_arr(subpart['v']),
-                children=[common.SingleBodyConfig(
-                    name=subpart['name'],
+            if 'r' in subpart and 'v' in subpart:
+                barycenter = BarycenterData(
                     m=float(subpart['m']),
-                    r=np.array([0., 0., 0.]),
-                    v=np.array([0., 0., 0.])
-                )]
-            )
+                    r=to_arr(subpart['r']),
+                    v=to_arr(subpart['v']),
+                    children=[common.SingleBodyConfig(
+                        name=subpart['name'],
+                        m=float(subpart['m']),
+                        r=np.array([0., 0., 0.]),
+                        v=np.array([0., 0., 0.])
+                    )]
+                )
+            else:
+                barycenter_args = {k: float(subpart[k]) for k in subpart.keys() if k not in ('name', 'satellites')}
+                barycenter_args['children'] = [
+                    common.SingleBodyConfig(
+                        name=subpart['name'],
+                        m=float(subpart['m']),
+                        r=np.array([0., 0., 0.]),
+                        v=np.array([0., 0., 0.])
+                    )
+                ]
+                barycenter = OscBarycenterData(**barycenter_args)
             logger.debug(f'Processed barycenter, got this: {barycenter}')
             return [barycenter]
         else:
@@ -51,10 +92,10 @@ def build_body_list(subpart):
             my_mass = float(subpart['m'])
             my_name = subpart['name']
 
-            current_bary_m = sum(bc.m for bc in barycenters) + my_mass
-            current_bary_r = to_arr(subpart['r'])
-            current_bary_v = to_arr(subpart['v'])
-            logger.debug(f'Current barycenter data: m {current_bary_m}, r {current_bary_r}, v {current_bary_v}')
+
+            # Convert other barycenters to state-vectors
+            barycenters = [osc_to_state_barycenter(bary, my_mass) for bary in barycenters]
+            logger.debug(f'Got the following barycenters after conversion: {barycenters}')
 
             # Find radii w.r.t. current barycenter
             logger.debug('Solving a linear system for radii')
@@ -88,9 +129,9 @@ def build_body_list(subpart):
                 r=r_barys[0, :], v=v_barys[0, :]
             )]
             # Apply r,v updates to each of "satellite" barycenter children
-            for satellite_idx in range (N_sats):
-                r_fix = r_barys[satellite_idx+1, :]# + current_bary_r
-                v_fix = v_barys[satellite_idx+1, :]# + current_bary_v
+            for satellite_idx in range(N_sats):
+                r_fix = r_barys[satellite_idx+1, :]
+                v_fix = v_barys[satellite_idx+1, :]
                 satellite_bary_cfg = barycenters[satellite_idx]
                 for child in satellite_bary_cfg.children:
                     new_children_cfg += [common.SingleBodyConfig(
@@ -99,7 +140,19 @@ def build_body_list(subpart):
                         v=child.v + v_fix
                     )]
 
-            current_barycenter = BarycenterData(m=current_bary_m, r=current_bary_r, v=current_bary_v, children=new_children_cfg)
+            # Build current barycenter data object
+            current_bary_m = sum(bc.m for bc in barycenters) + my_mass
+            if 'r' in subpart and 'v' in subpart:
+                # State-vector definition
+                current_bary_r = to_arr(subpart['r'])
+                current_bary_v = to_arr(subpart['v'])
+                current_barycenter = BarycenterData(m=current_bary_m, r=current_bary_r, v=current_bary_v, children=new_children_cfg)
+            else:
+                # Oscullating element definition
+                barycenter_args = {k: float(subpart[k]) for k in ('sma', 'ecc', 'inc', 'raan', 'arg_pe', 'M0')}
+                barycenter_args['m'] = current_bary_m
+                barycenter_args['children'] = new_children_cfg
+                current_barycenter = OscBarycenterData(**barycenter_args)
             logger.debug(f'Processed barycenter, got this: {current_barycenter}')
 
             return [current_barycenter]

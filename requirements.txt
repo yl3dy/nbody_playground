@@ -4,5 +4,7 @@ pandas
 matplotlib
 progressbar2
 ruamel.yaml
+orbitalpy
+
 pylint
 ipython
