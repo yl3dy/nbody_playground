@@ -42,16 +42,21 @@ def _get_times_from_body_infos(body_infos):
     return next(iter(body_infos.values()))['t']
 
 
-def plot_positions(run_name : str, save_path : Optional[Path], body_list : Optional[List[str]]) -> None:
+def plot_positions(run_name : str, save_path : Optional[Path], body_list : Optional[List[str]], relative_to : str) -> None:
     body_infos = load_simulation_data(run_name)
 
     if not body_list:
         body_list = body_infos.keys()
 
+    if relative_to:
+        reference = {coord: body_infos[relative_to][coord] for coord in ('x', 'y', 'z')}
+    else:
+        reference = {'x': 0., 'y': 0., 'z': 0.}
+
     times = _get_times_from_body_infos(body_infos)
     for body_name in body_list:
         body_info = body_infos[body_name]
-        plt.scatter(body_info['x'], body_info['y'], c=times, label=body_name, s=2, alpha=0.5, cmap='inferno')
+        plt.scatter(body_info['x'] - reference['x'], body_info['y'] - reference['y'], c=times, label=body_name, s=2, alpha=0.5, cmap='inferno')
     plt.axvline(0, linestyle='--', color='gray', alpha=0.5)
     plt.axhline(0, linestyle='--', color='gray', alpha=0.5)
     plt.xlabel('x, m')

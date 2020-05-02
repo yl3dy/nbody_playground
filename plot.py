@@ -25,6 +25,7 @@ def main() -> None:
 
     parser_r = create_subparser(subparsers, 'pos')
     parser_r.add_argument('--bodies', type=str, nargs='*', help='names of bodies to plot')
+    parser_r.add_argument('--relative-to', type=str)
 
     parser_energy = create_subparser(subparsers, 'energy')
     parser_energy.add_argument('--bodies', type=str, nargs='*', help='names of bodies to plot separately')
@@ -40,7 +41,7 @@ def main() -> None:
     logging.debug(str(args))
 
     if args.action_name == 'pos':
-        plot.plot_positions(args.run_name, args.save, args.bodies)
+        plot.plot_positions(args.run_name, args.save, args.bodies, args.relative_to)
     elif args.action_name == 'energy':
         plot.plot_energy(args.run_name, args.save, args.bodies, args.cumulative)
     elif args.action_name == 'momentum':
