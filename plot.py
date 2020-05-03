@@ -46,7 +46,7 @@ def main() -> None:
     elif args.action_name == 'energy':
         plot.plot_energy(args.run_name, args.save, args.bodies, args.cumulative)
     elif args.action_name == 'momentum':
-        plot.plot_momentum(args)
+        plot.plot_momentum(args.run_name, args.save, args.bodies, args.cumulative)
     else:
         raise RuntimeError(f'unexpected plotting action: {args.action_name}')
 
