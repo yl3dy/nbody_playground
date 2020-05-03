@@ -125,6 +125,53 @@ def plot_energy(run_name : str, save_path : Optional[Path], body_list : Optional
         plt.show()
 
 
+def get_body_momenti(body_infos : dict, body_name : str):
+    bi = body_infos[body_name]
+    mass = bi['m'][0]   # assume constant mass
+    p = mass * structured_to_unstructured(bi[['vx', 'vy', 'vz']])
+    return p
 
-def plot_momentum(args):
-    raise NotImplementedError
+
+def get_rel_momenti(body_momenti : dict, cumulative : bool = False):
+    if cumulative:
+        integral_momentum = sum(body_momenti.values())
+
+        # Reference momentum: the length of the smallest momentum of all bodies at a given time
+        N_idx = body_momenti[list(body_momenti.keys())[0]].shape[0]  # FIXME awful hack to get the shape of a momentum array for some body
+        ref_momentum_abs = []
+        for idx in range(N_idx):
+            ref_momentum_abs.append(
+                min(scipy.linalg.norm(body_momenti[body_name][idx, :]) for body_name in body_momenti.keys())
+            )
+
+        rel_integral_momentum = scipy.linalg.norm(integral_momentum, axis=1) / ref_momentum_abs
+        return rel_integral_momentum
+    else:
+        return {body_name: scipy.linalg.norm(body_momentum, axis=1) for body_name, body_momentum in body_momenti.items()}
+
+
+def plot_momentum(run_name : str, save_path : Optional[Path], body_list : Optional[List[str]], is_cumulative : bool) -> None:
+    body_infos = load_simulation_data(run_name)
+
+    if not body_list:
+        body_list = body_infos.keys()
+
+    body_momenti = {name: get_body_momenti(body_infos, name) for name in body_list}
+
+    if is_cumulative:
+        body_times = _get_times_from_body_infos(body_infos)
+        cumulative_momenti = get_rel_momenti(body_momenti, cumulative=True)
+        plt.plot(body_times, cumulative_momenti, label='Cumulative')
+    else:
+        noncumulative_momenti = get_rel_momenti(body_momenti, cumulative=False)
+        for body_name in body_list:
+            body_info = body_infos[body_name]
+            plt.plot(body_info['t'], noncumulative_momenti[body_name], label=body_name)
+
+    plt.ylabel('Relative momentum length')
+    plt.xlabel('Time, s')
+    plt.legend()
+    if save_path:
+        plt.savefig(str(save_path))
+    else:
+        plt.show()
