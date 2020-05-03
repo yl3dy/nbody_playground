@@ -2,6 +2,14 @@
 *.o
 *.so
 *.vim
+*.tar.bz2
+*.tar.gz
+*.7z
 
 venv/
-sample/
+
+*.png
+*.yaml
+*.global
+*.bodies
+!sample_configs/*

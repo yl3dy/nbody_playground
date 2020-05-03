@@ -1,0 +1,36 @@
+global_config:
+    dt: 86400
+    iter_num: 365000
+    output_point_num: 36500
+    engine: naive
+    method: velocity_verlet
+body_config:
+    name: Sun
+    m: 1.9885e30
+    r: [0, 0, 0]
+    v: [0, 0, 0]
+    satellites:
+        - name: Earth
+          m: 5.97237e24
+          # Semi-major axis (m)
+          sma: 149_598_023_000
+          # Eccentricity
+          ecc: 0.0167086
+          # Inclination (rad)
+          inc: 8.7e-7
+          # Right ascension of ascending node (rad)
+          raan: -0.1965352
+          # Argument of periapsis (rad)
+          arg_pe: 1.9933027
+          # Mean anomaly at epoch (rad)
+          M0: 6.25905
+          satellites:
+              - name: Moon
+                m: 7.342e22
+                sma: 384_399_000
+                ecc: 0.0549
+                inc: 0.08980
+                raan: 0
+                arg_pe: 1
+                M0: 0
+                satellites:
