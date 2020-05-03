@@ -81,7 +81,7 @@ def get_body_energies(body_infos, body_name):
         body_other = body_infos[other_body_name]
         r_other = structured_to_unstructured(body_other[['x', 'y', 'z']])
         W += body_other['m'] / scipy.linalg.norm(r_other - r_mine, axis=1)
-    W *= -G*bi['m']*W
+    W *= -G*bi['m']
 
     return K + W
 
