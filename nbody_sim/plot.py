@@ -87,7 +87,7 @@ def get_body_energies(body_infos, body_name):
 
 def _get_energy_stats(energies):
     return {
-        'max_diff': np.abs(energies - energies[0]).max() / abs(energies[0]),
+        'max_diff': abs(energies.min() - energies.max()) / abs(energies[0]),
         'rel_stdev': energies.std() / abs(energies[0]),
         'avg': energies.mean()
     }
