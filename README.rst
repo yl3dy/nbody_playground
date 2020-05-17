@@ -32,6 +32,7 @@ Simulation engines and methods
     * ``velocity_verlet``
     * ``ruth3``
     * ``ruth4``
+* ``scipy``: uses ``scipy.integrate.solve_ivp``
 * ``numpy`` (TODO): massive Numpy/Scipy usage
 * ``cython`` (TODO): cythonized integration loop
 * ``numba`` (TODO)

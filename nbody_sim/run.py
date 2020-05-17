@@ -16,6 +16,8 @@ def parse_and_run(run_name : str) -> None:
         from .engines.dummy import simulate
     elif global_config.engine == 'naive':
         from .engines.naive import simulate
+    elif global_config.engine == 'scipy':
+        from .engines.scipy import simulate
     else:
         raise ValueError('unknown engine name {}'.format(global_config.engine))
 
