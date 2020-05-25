@@ -2,7 +2,7 @@
 n-body playground
 =================
 
-Requires Python 3.5+.
+Requires Python 3.5+. License: MIT
 
 
 Components
