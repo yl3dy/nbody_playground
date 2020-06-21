@@ -27,6 +27,7 @@ class BaseIntegrator(ABC):
         self._global_cfg = global_config
         self._m = initial_system_state.m.copy()
         self._names = initial_system_state.names[:]
+        self._parent_names = initial_system_state.parent_names[:]
         self._previous_r = collections.deque([initial_system_state.r.copy()], self.NUM_PREVIOUS_STATES)
         self._previous_v = collections.deque([initial_system_state.v.copy()], self.NUM_PREVIOUS_STATES)
         self._current_r = initial_system_state.r.copy()
@@ -74,7 +75,7 @@ class BaseIntegrator(ABC):
     @property
     def state(self):
         """Current system state."""
-        return SystemState(names=self._names, m=self._m, r=self._current_r, v=self._current_v)
+        return SystemState(names=self._names, m=self._m, r=self._current_r, v=self._current_v, parent_names=self._parent_names)
 
 
 class SemiExplicitEulerIntegrator(BaseIntegrator):

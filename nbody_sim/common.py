@@ -6,8 +6,8 @@ import progressbar
 
 
 GlobalConfig = collections.namedtuple('GlobalConfig', ['dt', 'iter_num', 'output_point_num', 'engine', 'method'])
-SingleBodyConfig = collections.namedtuple('SingleBodyConfig', ['name', 'm', 'r', 'v'])
-SystemState = collections.namedtuple('SystemState', ['names', 'm', 'r', 'v'])
+SingleBodyConfig = collections.namedtuple('SingleBodyConfig', ['name', 'm', 'r', 'v', 'parent_name'])
+SystemState = collections.namedtuple('SystemState', ['names', 'm', 'r', 'v', 'parent_names'])
 
 
 def read_global_config(run_name : str) -> GlobalConfig:
@@ -58,14 +58,16 @@ def read_body_config(run_name : str, iter_num : int = 0) -> SystemState:
                 name=row['name'],
                 m=float(row['m']),
                 r=(float(row['x']), float(row['y']), float(row['z'])),
-                v=(float(row['vx']), float(row['vy']), float(row['vz']))
+                v=(float(row['vx']), float(row['vy']), float(row['vz'])),
+                parent_name=row['parent']
             ))
 
     system_state = SystemState(
         names=[b.name for b in bodies],
         m=np.array([b.m for b in bodies], dtype=np.float64),
         r=np.array([b.r for b in bodies], dtype=np.float64),
-        v=np.array([b.v for b in bodies], dtype=np.float64)
+        v=np.array([b.v for b in bodies], dtype=np.float64),
+        parent_names=[b.parent_name for b in bodies]
     )
     return system_state
 
@@ -73,7 +75,7 @@ def read_body_config(run_name : str, iter_num : int = 0) -> SystemState:
 def write_body_config(run_name : str, state : SystemState, iter_num : int) -> None:
     assert iter_num >= 0
 
-    fieldnames = ['name', 'm', 'x', 'y', 'z', 'vx', 'vy', 'vz']
+    fieldnames = ['name', 'm', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'parent']
     body_count = len(state.names)
     output_path = get_body_config_path(run_name, iter_num)
 
@@ -85,6 +87,7 @@ def write_body_config(run_name : str, state : SystemState, iter_num : int) -> No
                 'name': state.names[i], 'm': state.m[i],
                 'x': state.r[i, 0], 'y': state.r[i, 1], 'z': state.r[i, 2],
                 'vx': state.v[i, 0], 'vy': state.v[i, 1], 'vz': state.v[i, 2],
+                'parent': state.parent_names[i]
             })
 
 

@@ -68,7 +68,8 @@ def build_body_list(subpart):
                         name=subpart['name'],
                         m=float(subpart['m']),
                         r=np.array([0., 0., 0.]),
-                        v=np.array([0., 0., 0.])
+                        v=np.array([0., 0., 0.]),
+                        parent_name=subpart['name']
                     )]
                 )
             else:
@@ -78,7 +79,8 @@ def build_body_list(subpart):
                         name=subpart['name'],
                         m=float(subpart['m']),
                         r=np.array([0., 0., 0.]),
-                        v=np.array([0., 0., 0.])
+                        v=np.array([0., 0., 0.]),
+                        parent_name=subpart['name']
                     )
                 ]
                 barycenter = OscBarycenterData(**barycenter_args)
@@ -126,7 +128,8 @@ def build_body_list(subpart):
             # Start building a list of "children" of this barycenter
             new_children_cfg = [common.SingleBodyConfig(
                 name=my_name, m=my_mass,
-                r=r_barys[0, :], v=v_barys[0, :]
+                r=r_barys[0, :], v=v_barys[0, :],
+                parent_name=my_name
             )]
             # Apply r,v updates to each of "satellite" barycenter children
             for satellite_idx in range(N_sats):
@@ -137,7 +140,8 @@ def build_body_list(subpart):
                     new_children_cfg += [common.SingleBodyConfig(
                         name=child.name, m=child.m,
                         r=child.r + r_fix,
-                        v=child.v + v_fix
+                        v=child.v + v_fix,
+                        parent_name=my_name if child.parent_name == child.name else child.parent_name
                     )]
 
             # Build current barycenter data object
@@ -170,7 +174,8 @@ def generate_system_state(body_config):
         names=[b.name for b in bodies],
         m=np.array([b.m for b in bodies], dtype=np.float64),
         r=np.array([b.r for b in bodies], dtype=np.float64),
-        v=np.array([b.v for b in bodies], dtype=np.float64)
+        v=np.array([b.v for b in bodies], dtype=np.float64),
+        parent_names=[b.parent_name for b in bodies]
     )
 
 
