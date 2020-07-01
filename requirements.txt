@@ -5,6 +5,8 @@ matplotlib
 progressbar2
 ruamel.yaml
 orbitalpy
+poliastro
+astropy
 
 pylint
 ipython

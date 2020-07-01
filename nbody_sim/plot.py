@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from scipy.constants import G
 import scipy.linalg
 from numpy.lib.recfunctions import structured_to_unstructured
+import astropy.units, astropy.constants
+import poliastro.twobody, poliastro.bodies, poliastro.core.angles
 
 from . import common
 
@@ -20,7 +22,7 @@ def load_simulation_data(run_name : str):
     body_names = common.read_body_config(run_name).names
 
     # Preallocate body info tables
-    body_info_dtype = [(field, np.float64) for field in ('t', 'm', 'x', 'y', 'z', 'vx', 'vy', 'vz')]
+    body_info_dtype = [(field, np.float64) for field in ('t', 'm', 'x', 'y', 'z', 'vx', 'vy', 'vz')] + [('parent_names', object)]
     body_info_tables = {name: np.empty(len(actual_iter_indices), dtype=body_info_dtype) for name in body_names}
 
     for i, iter_idx in enumerate(actual_iter_indices):
@@ -28,6 +30,7 @@ def load_simulation_data(run_name : str):
         assert body_info.names == body_names
         for body_idx, body_name in enumerate(body_names):
             row = body_info_tables[body_name][i]
+            row['parent_names'] = body_info.parent_names[body_idx]
             row['t'] = iter_idx * global_config.dt
             row['m'] = body_info.m[body_idx]
             for field_idx, field_name in enumerate(['x', 'y', 'z']):
@@ -63,6 +66,55 @@ def plot_positions(run_name : str, save_path : Optional[Path], axes : str, body_
     plt.xlabel(f'{axis_1}, m')
     plt.ylabel(f'{axis_2}, m')
     plt.legend()
+    if save_path:
+        plt.savefig(str(save_path))
+    else:
+        plt.show()
+
+
+def plot_elements(run_name : str, save_path : Optional[Path], body_name : str, elements : str):
+    parameter_name_map = {'sma': 'a', 'ecc': 'ecc', 'inc': 'inc', 'raan': 'raan', 'arg_pe': 'argp', 'M0': 'nu'}
+
+    body_infos = load_simulation_data(run_name)
+    this_body = body_infos[body_name]
+    parent_name = this_body['parent_names'][0]
+    parent_body = body_infos[parent_name]
+    if body_name == parent_name:
+        raise ValueError('this is the main body in the system, cannot calculate elements')
+
+    def get_relative_vec(this, parent, prefix=''):
+        vec_this = np.array([this[prefix+'x'], this[prefix+'y'], this[prefix+'z']])
+        vec_parent = np.array([parent[prefix+'x'], parent[prefix+'y'], parent[prefix+'z']])
+        return vec_this - vec_parent
+
+    # Build element sequence
+    parent_mass = parent_body['m'][0]
+    iteration_count = len(this_body['x'])
+    parameter_list = np.empty(iteration_count, dtype=np.float64)
+    for idx in range(iteration_count):
+        r_rel = get_relative_vec(this_body[idx], parent_body[idx])
+        v_rel = get_relative_vec(this_body[idx], parent_body[idx], prefix='v')
+        if not np.all(np.isfinite(r_rel)) or not np.all(np.isfinite(v_rel)):
+            print('Invalid values!', 'r', r_rel, 'v', v_rel)
+        if np.linalg.norm(r_rel) < 1e7:
+            print('Distance is too close!', r_rel)
+
+        parent_mass_units = parent_mass*astropy.units.kg
+        parent_body_orbital = poliastro.bodies.Body(None, astropy.constants.G*parent_mass_units, parent_name, mass=parent_mass_units*astropy.units.kg)
+        orbit = poliastro.twobody.Orbit.from_vectors(attractor=parent_body_orbital, r=r_rel*astropy.units.m, v=v_rel*astropy.units.m/astropy.units.s)
+        if elements != 'M0':
+            parameter_value = getattr(orbit, parameter_name_map[elements])
+            # Fuck units
+            parameter_value = float(parameter_value.si / parameter_value.unit)
+        else:
+            parameter_value = poliastro.core.angles.E_to_M(poliastro.core.angles.nu_to_E(orbit.nu, orbit.ecc), orbit.ecc)
+        parameter_list[idx] = parameter_value
+
+    # Actual plotting
+    times = _get_times_from_body_infos(body_infos)
+    plt.plot(times, parameter_list)
+    plt.xlabel('Time')
+    plt.ylabel(elements)
     if save_path:
         plt.savefig(str(save_path))
     else:

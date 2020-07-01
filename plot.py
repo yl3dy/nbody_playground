@@ -28,6 +28,10 @@ def main() -> None:
     parser_r.add_argument('--relative-to', type=str)
     parser_r.add_argument('--axes', type=str, default='xy', help='two axes to use in plotting')
 
+    parser_osc = create_subparser(subparsers, 'elements')
+    parser_osc.add_argument('body_name', type=str)
+    parser_osc.add_argument('--elements', type=str, help='orbital element to plot')
+
     parser_energy = create_subparser(subparsers, 'energy')
     parser_energy.add_argument('--bodies', type=str, nargs='*', help='names of bodies to plot separately')
     parser_energy.add_argument('--cumulative', action='store_true', help='do cumulative plot')
@@ -43,6 +47,8 @@ def main() -> None:
 
     if args.action_name == 'pos':
         plot.plot_positions(args.run_name, args.save, args.axes, args.bodies, args.relative_to)
+    elif args.action_name == 'elements':
+        plot.plot_elements(args.run_name, args.save, args.body_name, args.elements)
     elif args.action_name == 'energy':
         plot.plot_energy(args.run_name, args.save, args.bodies, args.cumulative)
     elif args.action_name == 'momentum':
